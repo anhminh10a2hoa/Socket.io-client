@@ -2,15 +2,20 @@ import React, { useState, useEffect } from "react";
 import "./Chat.css";
 import queryString from "query-string";
 import io from "socket.io-client";
+import InfoBar from "../InfoBar/InfoBar";
+import Input from "../Input/Input";
+import Messages from "../Messages/Messages";
+import TextContainer from "../TextContainer/TextContainer";
 
 let socket;
 
 const Chat = ({ location }) => {
   const [name, setName] = useState("");
   const [room, setRoom] = useState("");
+  const [users, setUsers] = useState("");
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
-  const ENDPOINT = "localhost:5000";
+  const ENDPOINT = "https://realtime-chat-application-2506.herokuapp.com/";
 
   useEffect(() => {
     const { name, room } = queryString.parse(location.search);
@@ -20,7 +25,7 @@ const Chat = ({ location }) => {
     setName(name);
     setRoom(room);
 
-    socket.emit("join", { name, room }, ({ error }) => {
+    socket.emit("join", { name, room }, (error) => {
       // alert(error);
     });
 
@@ -32,7 +37,11 @@ const Chat = ({ location }) => {
 
   useEffect(() => {
     socket.on("message", (message) => {
-      setMessage([...messages, message]);
+      setMessages([...messages, message]);
+    });
+
+    socket.on("roomData", ({ users }) => {
+      setUsers(users);
     });
   }, [messages]);
 
@@ -46,14 +55,15 @@ const Chat = ({ location }) => {
   return (
     <div className="outerContainer">
       <div className="container">
-        <input
-          value={message}
-          onChange={(event) => setMessage(event.target.value)}
-          onKeyPress={(event) =>
-            event.key === "Enter" ? sendMessage(event) : null
-          }
+        <InfoBar room={room} />
+        <Messages messages={messages} name={name} />
+        <Input
+          message={message}
+          setMessage={setMessage}
+          sendMessage={sendMessage}
         />
       </div>
+      <TextContainer users={users} />
     </div>
   );
 };
